@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: websocket-webflux
+server:
+  shutdown: immediate
