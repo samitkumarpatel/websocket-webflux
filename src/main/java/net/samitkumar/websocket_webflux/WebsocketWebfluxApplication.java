@@ -8,10 +8,17 @@ import org.springframework.web.reactive.HandlerMapping;
 import org.springframework.web.reactive.handler.SimpleUrlHandlerMapping;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 import org.springframework.web.reactive.socket.WebSocketMessage;
+import org.springframework.web.reactive.socket.WebSocketSession;
+import org.springframework.web.reactive.socket.server.support.HandshakeWebSocketService;
+import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAdapter;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @SpringBootApplication
 @Slf4j
@@ -39,6 +46,7 @@ public class WebsocketWebfluxApplication {
 			return session
 					.receive()
 					.mapNotNull(WebSocketMessage::getPayloadAsText)
+					.map(messageText -> "["+session.getAttributes().get("a_id")+"] : "+messageText)
 					.doOnNext(sink::tryEmitNext)
 					.then()
 					.and(session
@@ -52,5 +60,31 @@ public class WebsocketWebfluxApplication {
 		});
 
 		return new SimpleUrlHandlerMapping(map, -1);
+	}
+
+	@Bean
+	WebSocketHandlerAdapter webSocketHandlerAdapter() {
+		HandshakeWebSocketService handshakeWebSocketService = new HandshakeWebSocketService() {
+			@Override
+			public Mono<Void> handleRequest(ServerWebExchange exchange, WebSocketHandler handler) {
+				// Wrap the handler to intercept lifecycle
+				WebSocketHandler decoratedHandler = session -> {
+					String sessionId = session.getId();
+
+					return handler.handle(session)
+							.doOnSubscribe(sub -> {
+								session.getAttributes().put("a_id", UUID.randomUUID());
+								log.info("HANDSHAKE - Session JOINED: sessionId={}", sessionId);
+							})
+							.doFinally(signal -> {
+								log.info("HANDSHAKE - Session LEFT: sessionId={}, reason={}", sessionId, signal);
+							});
+				};
+
+				return super.handleRequest(exchange, decoratedHandler);
+			}
+		};
+
+		return new WebSocketHandlerAdapter(handshakeWebSocketService);
 	}
 }
