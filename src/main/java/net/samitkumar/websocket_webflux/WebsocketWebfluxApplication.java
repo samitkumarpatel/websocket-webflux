@@ -74,10 +74,10 @@ public class WebsocketWebfluxApplication {
 					return handler.handle(session)
 							.doOnSubscribe(sub -> {
 								session.getAttributes().put("a_id", UUID.randomUUID());
-								log.info("HANDSHAKE - Session JOINED: sessionId={}", sessionId);
+								log.info("HANDSHAKE - JOINED: sessionId={}", sessionId);
 							})
 							.doFinally(signal -> {
-								log.info("HANDSHAKE - Session LEFT: sessionId={}, reason={}", sessionId, signal);
+								log.info("HANDSHAKE - LEFT: sessionId={}, reason={}", sessionId, signal);
 							});
 				};
 
