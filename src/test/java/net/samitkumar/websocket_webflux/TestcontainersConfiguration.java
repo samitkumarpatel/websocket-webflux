@@ -3,7 +3,7 @@ package net.samitkumar.websocket_webflux;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
-import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.mongodb.MongoDBContainer;
 import org.testcontainers.rabbitmq.RabbitMQContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -13,13 +13,13 @@ class TestcontainersConfiguration {
 	@Bean
 	@ServiceConnection
 	RabbitMQContainer rabbitContainer() {
-		return new RabbitMQContainer(DockerImageName.parse("rabbitmq:latest"));
+		return new RabbitMQContainer(DockerImageName.parse("rabbitmq:3.13-management"));
 	}
 
 	@Bean
-	@ServiceConnection(name = "redis")
-	GenericContainer<?> redisContainer() {
-		return new GenericContainer<>(DockerImageName.parse("redis:latest")).withExposedPorts(6379);
+	@ServiceConnection
+	MongoDBContainer mongoDbContainer() {
+		return new MongoDBContainer(DockerImageName.parse("mongo:latest"));
 	}
 
 }
